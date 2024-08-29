@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 from scipy import interpolate
 import copy
+#import pybedtools as pbt
 
 from . import Util
 
@@ -10,10 +11,10 @@ def Bvals(
     xs,
     s,
     splines,
-    u=1e-8,
     L=None,
     rmap=None,
-    r=None,
+    r=1e-8,
+    u=1e-8,
     bmap=None,
     elements=[],
     max_r=0.1,
@@ -41,15 +42,20 @@ def Bvals(
     if len(u_vals) != 1:
         raise ValueError("more than one mutation rate present")
     uL = u_vals[0]
+    
+    # Each element could have its own average mutation rate
+    if np.isscalar(u):
+        all_u = [u for _ in elements]
+    else:
+        all_u = [_ for _ in u]
+    if not len(all_u) == len(elements):
+        raise ValueError("list of mutation rates and elements must be same length")
 
     # Build recombination map if needed
     if rmap is None:
         if L is None:
             L = max([xs[-1], elements[-1][1]])
         # TODO allow for constant recombination rate, handle with bmap if provided?
-        if r is None:
-            warnings.warn("No recombination rates provided, assuming r=1e-8")
-            r = 1e-8
         rmap = Util.build_uniform_rmap(r, L)
 
     ## TODO: pull the rec map adjustment back inside this function, since
@@ -61,13 +67,6 @@ def Bvals(
         all_s = [s]
     else:
         all_s = [_ for _ in s]
-    # Each element could have its own average mutation rate
-    if np.isscalar(u):
-        all_u = [u for _ in elements]
-    else:
-        all_u = [_ for _ in u]
-    if not len(all_u) == len(elements):
-        raise ValueError("list of mutation rates and elements must be same length")
 
     Bs = [np.ones(len(xs)) for s_val in all_s]
     if len(elements) > 0:

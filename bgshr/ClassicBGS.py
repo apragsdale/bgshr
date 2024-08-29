@@ -69,21 +69,20 @@ def extend_lookup_table(df_sub, ss):
     r_vals = np.array(sorted(list(set(df_sub["r"]))))
     cols = df_sub.columns
     data = {
-        "Na": np.unique(df_sub["Na"])[0],
-        "N1": np.unique(df_sub["Na"])[0],
-        "t": np.unique(df_sub["t"])[0],
+        "Ns": np.unique(df_sub["Ns"])[0],
+        "Ts": np.unique(df_sub["Ts"])[0],
         "uL": np.unique(df_sub["uL"])[0],
         "uR": np.unique(df_sub["uR"])[0],
         "Order": 0,
         "Generation": 0,
     }
-    data["pi0"] = 2 * data["Na"] * data["uR"]
+    data["pi0"] = 2 * data["Ns"] * data["uR"]
 
     new_data = []
     for s in ss:
         Bs = reduction_CBGS(s, data["uL"], r_vals)
         data["s"] = s
-        data["Hl"] = _get_Hl(s, data["Na"], data["uL"])
+        data["Hl"] = _get_Hl(s, data["Ns"], data["uL"])
         Hrs = Bs * data["pi0"]
         data["piN_pi0"] = data["Hl"] / data["pi0"]
         for r, B, Hr in zip(r_vals, Bs, Hrs):
@@ -128,7 +127,7 @@ def build_lookup_table(ss, rs, Ne=1e4, uL=1e-8, uR=1e-8):
         "Order": 0,
         "Generation": 0,
     }
-    data["pi0"] = 2 * data["Na"] * data["uR"]
+    data["pi0"] = 2 * data["Ns"] * data["uR"]
     new_data = []
     for s in ss:
         if s == 0:
