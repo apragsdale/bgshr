@@ -1,10 +1,14 @@
+"""
+Functions for demographic inference.
+"""
+
 import numpy as np
 from scipy import stats
 import warnings
 import gzip
 import re
 
-from . import Util
+from . import Util, Predict
 
 
 def num_diff_same(counts):
@@ -99,22 +103,32 @@ def expected_pi(pi0, B, mask=None):
 
 def expected_pi0(u, df, L=None, elements=[], dfes=[]):
     """
-    Get expected pi0, given mutation rate and any elements under selection. The
-    mutation rate can be a single scalar value valid across the entire region,
-    or an array of per-base pair mutation rates. The elements are lists of
-    intervals (a list of lists, with half open intervals [left, right) defined
-    within). The dfes correspond to those elements.
+    Get expected pi0, given mutation rates and any elements under selection.
 
-    The DFEs are defined as a dictionary, specifying the DFE type and any
-    parameters associated with that DFE. For example, a gamma DFE is defined as
-    `{"type": "gamma", "shape": shape, "scale": scale}`. A gamma DFE with a
-    proportion of sites being neutral (e.g., gamma for nonsynonymous and
-    neutral for synonymous mutations) would be `{"type": "gamma_neu", "shape":
-    shape, "scale": scale, "p_neu": 1 / (2.31 + 1)}`, or whatever value `p_neu`
-    should be.
+    DFEs are defined with dictionaries, specifying the DFE type and any
+    parameters associated with that DFE.
 
-    Elements should not overlap, since overlapping elements will have values
-    set by the last-seen element in this function.
+    :param u: Mutation rate. May be a scalar or an array of site mutation rates.
+    :param df: Lookup table, used to find neutral and deleterious pi0.
+    :param elements: List of arrays specifying starts/ends of constrained
+        elements, corresponding to `dfes`. These are half-open (BED-style).
+        They should specify non-overlapping regions, since overlapping elements
+        will have values set by the last-seen element type in this function.
+    :param dfes: List of DFE parameter dictionaries, specifying distribution
+        type and parameters associated with that DFE. For example, a gamma DFE
+        is defined as
+
+            `{"type": "gamma", "shape": shape, "scale": scale}`.
+
+        A gamma DFE with a proportion of sites being neutral (e.g., gamma for
+        nonsynonymous and neutral for synonymous mutations) would be
+
+            `{"type": "gamma_neutral",
+              "shape": shape,
+              "scale": scale,
+              "p_neu": 1 / (2.31 + 1)}`
+
+        or whatever value `p_neu` should be.
     """
     if np.isscalar(u):
         if L is None:
@@ -136,50 +150,38 @@ def expected_pi0(u, df, L=None, elements=[], dfes=[]):
     for elems, dfe in zip(elements, dfes):
         # get diversity for uL
         pi_dfe = _get_pi_dfe(df, dfe)
-        # scale by u_arr
-        pi_arr = pi_dfe * u_arr / uL
-        # fill in pi0 for each element
-        for e in elems:
-            pi0[e[0] : e[1]] = pi_arr[e[0] : e[1]]
-
+        # convert elements to a mask array and fill in pi0 for elements
+        where_elems = ~Util.elements_to_mask(elems, L=len(u_arr))
+        pi0[where_elems] = pi_dfe * u_arr[where_elems] / uL
     return pi0
 
 
 def _get_pi_dfe(df, dfe):
+    """
+    Compute pi0 for a given `dfe` by using discretized DFE weights to integrate
+    across `Hl` values in a lookup table `df`.
+
+    :param df: Lookup table
+    :param dfe: DFE parameter dictionary
+    :returns: Scalar expected pi0
+    """
     df_sub = df[df["r"] == 0]
     ss = np.sort(df_sub["s"])
     assert ss[-1] == 0
-    # add DFEs here
-    if dfe["type"] == "gamma":
-        weights = _get_gamma_weights(ss, dfe["shape"], dfe["scale"])
-    elif dfe["type"] == "gamma_neutral":
-        weights = _get_gamma_neutral_weights(
-            ss, dfe["shape"], dfe["scale"], dfe["p_neu"]
-        )
-    else:
-        raise ValueError(f"DFE type {df['type']} is unknown")
+    weights = Util.get_dfe_weights(ss, dfe)
     Hls = 2 * np.array([df_sub[df_sub["s"] == s]["Hl"].iloc[0] for s in ss])
-    return np.sum(Hls * weights)
+    pi_dfe = np.sum(Hls * weights)
+    return pi_dfe
 
 
 def _get_gamma_weights(ss, shape, scale):
-    weights = np.concatenate(
-        (
-            Util.weights_gamma_dfe(ss[:-1], shape, scale),
-            [stats.gamma.cdf(-ss[-2], shape, scale=scale)],
-        )
-    )
-    return weights
+    """For backwards compatability"""
+    return Util.weights_gamma_dfe(ss, shape, scale)
 
 
 def _get_gamma_neutral_weights(ss, shape, scale, p_neu):
-    weights = np.concatenate(
-        (
-            (1 - p_neu) * Util.weights_gamma_dfe(ss[:-1], shape, scale),
-            [p_neu + (1 - p_neu) * stats.gamma.cdf(-ss[-2], shape, scale=scale)],
-        )
-    )
-    return weights
+    """For backwards compatability"""
+    return Util.weights_gamma_neutral_dfe(ss, shape, scale, p_neu)
 
 
 def load_mask(mask_fname, L=None):
@@ -213,3 +215,4 @@ def load_mask(mask_fname, L=None):
     else:
         raise ValueError("file type not recognized")
     return mask
+
