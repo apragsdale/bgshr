@@ -36,10 +36,13 @@ def extend_lookup_table(df_sub, ss, generation=0):
 
     # n-epoch tables
     else:
-        Ts = np.array([int(float(x)) for x in Ts.split(";")])
-        Ns = np.array([int(float(x)) for x in Ns.split(";")])
+        Ts_arr = np.array([int(float(x)) for x in Ts.split(";")])
+        Ns_arr = np.array([int(float(x)) for x in Ns.split(";")])
         df_new = build_lookup_table_n_epoch(
-            ss, rs, Ns, Ts, generations=[generation], uL=uL, uR=uR)
+            ss, rs, Ns_arr, Ts_arr, generations=[generation], uL=uL, uR=uR)
+        # Make sure that `Ts`, `Ns` formats in the new table match the old
+        df_new["Ts"] = Ts
+        df_new["Ns"] = Ns
 
     df_comb = pandas.concat([df_sub, df_new], ignore_index=True)
     return df_comb
@@ -508,7 +511,7 @@ def build_lookup_table_n_epoch(
         generations = [0] # TODO check
 
     Nstring = ";".join([str(N) for N in Ns])
-    Tstring = ";".join([str(T) for T in Ts])
+    Tstring = ";".join([str(int(T)) for T in Ts])
     data = {
         "Ns": Nstring,
         "Ts": Tstring,
