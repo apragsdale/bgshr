@@ -917,6 +917,7 @@ def get_lookup_table(
     """
     # Load lookup table
     df = Util.load_lookup_table(fname)
+    df = Util.subset_lookup_table(df)
     df = Util.cap_max_lookup_table_B(df)
     # Scale lookup table to target Ne
     if Ne:
