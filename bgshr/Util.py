@@ -758,7 +758,7 @@ def elements_to_mask(elements, L=None):
     Return an array which equals False within `elements` and True elsewhere.
     """
     if L is None:
-        L = elements[-1, 1]
+        L = np.max(elements[:, 1])
     mask = np.ones(L, dtype=bool)
     for (start, end) in elements:
         if start > L:

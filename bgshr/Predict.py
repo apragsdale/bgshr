@@ -242,7 +242,7 @@ def _get_r_dists(xs, elements, rmap):
 
 def _get_interpolated_svals(s_elem, s_vals):
     s0 = s_vals[np.where(s_elem > s_vals)[0][-1]]
-    s1 = s_vals[np.where(s_elem <= s_vals)[0][0]]
+    s1 = s_vals[np.where(s_elem < s_vals)[0][0]]
     p1 = (s_elem - s0) / (s1 - s0)
     p0 = 1 - p1
     assert 0 < p0 < 1
