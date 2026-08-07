@@ -343,7 +343,8 @@ def load_recombination_map(
     pos_col="Position(bp)",
     rate_col="Rate(cM/Mb)"):
     """
-    Get positions and rates to build recombination map.
+    Get positions and rates to build recombination map, from a HapMap
+    formatted recombination map file
 
     If L is not None, we extend the map to L if it is greater than the
     last point in the input file, or we truncate the map at L if it is
@@ -353,8 +354,13 @@ def load_recombination_map(
     the final data point.
     """
     map_df = pandas.read_csv(fname, sep="\\s+")
-    pos = np.concatenate(([0], map_df[pos_col]))
-    rates = np.concatenate(([0], map_df[rate_col])) / 100 / 1e6
+    pos = np.array(map_df[pos_col])
+    rates = np.array(map_df[rate_col]) / 100 / 1e6  # converting from cM/Mb to r
+    if pos[0] > 0:
+        # if the map starts at a position > 0, start the map at zero instead
+        pos = np.concatenate(([0], pos))
+        rates = np.concatenate(([0], rates))
+
     if L is not None:
         if L > pos[-1]:
             pos = np.insert(pos, len(pos), L)
