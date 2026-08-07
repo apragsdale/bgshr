@@ -721,11 +721,11 @@ def fit_Ne(args):
     if args.rich:
         comb_elements = Util.merge_elements(elements)
         element_mask = Util.elements_to_mask(comb_elements, L=L)
-        # Re-mask `site_pi` to retain only selectively constrained sites
+        # Re-mask `site_exp_pi` to retain only selectively constrained sites
         del_sites_mask = np.logical_or(mask, element_mask)
-        site_pi.mask = del_sites_mask
+        site_exp_pi.mask = del_sites_mask
         data["exp_del_pi"], data["del_sites"] = Util.compute_window_averages(
-            out_windows, site_pi)
+            out_windows, site_exp_pi)
 
         umap.mask = mask
         data["avg_mut"], _ = Util.compute_window_averages(out_windows, umap)
