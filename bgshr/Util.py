@@ -613,12 +613,19 @@ def read_bedfile(fname, filter_col=None, sep=None, L=None, get_chrom=False):
     :param str sep: Optional separator string, defaults to "\t" if None.
     """
     # Check whether there is a header
+    num_comment_lines = 0
     if fname.endswith(".gz"):
         with gzip.open(fname, "rb") as fin:
             first_line = fin.readline().decode()
+            while first_line.startswith("#"):
+                num_comment_lines += 1
+                first_line = fin.readline().decode()
     else:
         with open(fname, "r") as fin:
             first_line = fin.readline()
+            while first_line.startswith("#"):
+                num_comment_lines += 1
+                first_line = fin.readline()
 
     if "," in first_line:
         split_line = first_line.split(",")
@@ -630,9 +637,9 @@ def read_bedfile(fname, filter_col=None, sep=None, L=None, get_chrom=False):
             sep = r"\s+"
 
     if split_line[1].isnumeric():
-        data = pandas.read_csv(fname, sep=sep, header=None)
+        data = pandas.read_csv(fname, sep=sep, header=None, skiprows=num_comment_lines)
     else:
-        data = pandas.read_csv(fname, sep=sep)
+        data = pandas.read_csv(fname, sep=sep, skiprows=num_comment_lines)
 
     if filter_col is not None:
         assert len(filter_col) == 1
