@@ -408,7 +408,7 @@ def compute_pi(args):
 
     # Calculate other quantities of interest
     if args.rich:
-        comb_elements = Util.combine_elements(elements)
+        comb_elements = Util.merge_elements(elements)
         element_mask = Util.elements_to_mask(comb_elements, L=L)
         # Re-mask `site_pi` to retain only selectively constrained sites
         del_sites_mask = np.logical_or(mask, element_mask)
@@ -549,7 +549,7 @@ def predict_B(args):
 
     # Calculate other quantities of interest
     if args.rich:
-        comb_elements = Util.combine_elements(elements)
+        comb_elements = Util.merge_elements(elements)
         element_mask = Util.elements_to_mask(comb_elements, L=L)
         # Re-mask `site_pi` to retain only selectively constrained sites
         del_sites_mask = np.logical_or(mask, element_mask)
@@ -719,7 +719,7 @@ def fit_Ne(args):
 
     # Calculate other quantities of interest
     if args.rich:
-        comb_elements = Util.combine_elements(elements)
+        comb_elements = Util.merge_elements(elements)
         element_mask = Util.elements_to_mask(comb_elements, L=L)
         # Re-mask `site_pi` to retain only selectively constrained sites
         del_sites_mask = np.logical_or(mask, element_mask)

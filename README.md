@@ -58,7 +58,7 @@ per-base recombination rate. Along with these data we require parameters for
 the relevant gamma-distributed DFEs, which may include a point mass of neutral
 mutations.
 
-Example usage is shown in [human-chr22-example.ipynb](examples/human-chr22-example.ipynb).
+Example usage is shown in [human_chr22_cds_regulatory_model.ipynb](examples/human_chr22_cds_regulatory_model.ipynb).
 
 Current features include:
 - Discretized gamma DFEs

@@ -14,7 +14,7 @@ from . import Util, ClassicBGS, Predict
 
 def get_Bmap(xs, Bs):
     """Get a function that interpolates B-values using cubic splines."""
-    return interpolate.CubicSpline(xs, Bs, bc_type="natural")
+    return interpolate.PchipInterpolator(xs, Bs)
 
 
 # -----------------------------------------------------------------------------
@@ -475,23 +475,27 @@ def Bvals_fast(
         max_dev = 1e-10
         max_dists = []
         for s in ss:
-            idx = np.where(splines[(uL, s)](test_dists) > 1 - max_dev)[0][0]
-            max_dist_s = test_dists[idx]
+            above_dev = np.where(splines[(uL, s)](test_dists) > 1 - max_dev)[0]
+            if len(above_dev) > 0:
+                idx = above_dev[0]
+                max_dist_s = test_dists[idx]
+            else:
+                max_dist_s = np.inf
             if max_dist is not None:
                 max_dist_s = min(max_dist, max_dist_s)
             max_dists.append(max_dist_s)
 
         # Loop over s coefficients and constraint categories
         distances = _get_distances(xs, windows, rmap)
+        dists_below = _get_signed_distances(xs[0], windows, rmap)
+        dists_above = _get_signed_distances(xs[-1], windows, rmap)
         for i, s in enumerate(ss):
             if s == 0:
                 continue
 
             # Find the first/last windows to consider, given s and `max_dists`
             max_dist = max_dists[i]
-            dists_below = _get_signed_distances(xs[0], windows, rmap)
             bound0 = np.searchsorted(dists_below, -max_dist)
-            dists_above = _get_signed_distances(xs[-1], windows, rmap)
             bound1 = np.searchsorted(dists_above, max_dist)
 
             if Bmap is None:

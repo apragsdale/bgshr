@@ -16,4 +16,5 @@ bgshr predict_B \
     --chunk_size 200 \
     --spacing 10000 \
     --verbose \
+    --rich \
     -o outputs/human_chr22_cds_regulatory_model_landscapes.csv
