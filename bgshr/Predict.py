@@ -14,7 +14,7 @@ from . import Util, ClassicBGS, Predict
 
 def get_Bmap(xs, Bs):
     """Get a function that interpolates B-values using cubic splines."""
-    return interpolate.PchipInterpolator(xs, Bs)
+    return interpolate.CubicSpline(xs, Bs, bc_type="natural")
 
 
 # -----------------------------------------------------------------------------
