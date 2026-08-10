@@ -492,7 +492,7 @@ def predict_B(args):
         print(Util._get_time(), "loaded data")
 
     # Set up focal site array
-    xs = np.arange(args.spacing // 2, L - args.spacing // 2, args.spacing)
+    xs = np.arange(args.spacing // 2, L, args.spacing)
 
     # Predict B-values at focal sites
     interf_Bs = Predict.interference_Bvals(
@@ -514,8 +514,8 @@ def predict_B(args):
     else:
         res = args.resolution
 
-    out_windows = np.stack([np.arange(0, L - res, res),
-        np.arange(res, L, res)], axis=1, dtype=np.int64)
+    out_windows = np.stack([np.arange(0, L, res),
+        np.arange(res, L + res, res)], axis=1, dtype=np.int64)
 
     # Compute expected diversity
     B_xs = interf_Bs[-1]
@@ -644,7 +644,7 @@ def fit_Ne(args):
         print(Util._get_time(), "loaded data")
 
     # Set up focal site array
-    xs = np.arange(args.spacing // 2, L - args.spacing // 2, args.spacing)
+    xs = np.arange(args.spacing // 2, L, args.spacing)
 
     opt_args = (
         xs,
@@ -682,8 +682,8 @@ def fit_Ne(args):
     else:
         res = args.resolution
 
-    out_windows = np.stack([np.arange(0, L - res, res),
-        np.arange(res, L, res)], axis=1, dtype=np.int64)
+    out_windows = np.stack([np.arange(0, L, res),
+        np.arange(res, L + res, res)], axis=1, dtype=np.int64)
 
     # Recover maps computed with highest-LL Ne
     interf_Bs, site_exp_pi = _data_cache["data"]
