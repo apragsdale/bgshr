@@ -996,13 +996,7 @@ def get_umap(fname, rate_col="rate", u=None, L=None):
         if fname.endswith(".npy"):
             umap = np.load(fname)
         else:
-            try:
-                u_tbl = pandas.read_csv(fname)
-            except:
-                try:
-                    u_tbl = pandas.read_csv(fname, sep="\\s+")
-                except:
-                    raise ValueError("could not read mutation map file format")
+            u_tbl = pandas.read_table(fname, engine="python", sep=None)
             starts = np.array(u_tbl[u_tbl.columns[1]])
             ends = np.array(u_tbl[u_tbl.columns[2]])
             windows = np.stack([starts, ends], axis=1)
