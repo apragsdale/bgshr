@@ -280,7 +280,7 @@ def build_uniform_rmap(r, L):
     """
     pos = [0, L]
     cum = [0, r * L]
-    return interpolate.interp1d(pos, cum)
+    return interpolate.interp1d(pos, cum, fill_value="extrapolate")
 
 
 def build_pw_constant_rmap(pos, rates):
@@ -302,6 +302,9 @@ def build_recombination_map(pos, rates):
     From arrays of positions and rates, build a linearly interpolated recombination
     map. The length of pos must be one greater than rates, and must be monotonically
     increasing.
+
+    The returned interpolation function will extrapolate beyond the chromosome
+    length implied by ``pos``.
     """
     cum = [0]
     for left, right, rate in zip(pos[:-1], pos[1:], rates):
@@ -311,7 +314,7 @@ def build_recombination_map(pos, rates):
         if bp <= 0:
             raise ValueError("positions are not monotonically increasing")
         cum += [cum[-1] + bp * rate]
-    return interpolate.interp1d(pos, cum)
+    return interpolate.interp1d(pos, cum, fill_value="extrapolate")
 
 
 def adjust_recombination_map(rmap, bmap):
