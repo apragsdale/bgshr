@@ -6,7 +6,7 @@
 bgshr predict_B \
     -t data/lookup_tbl_equilibrium.csv.gz \
     --bed data/100kb_elements.bed \
-    -r 1e-8 \
+    --rmap data/100kb_short_map.txt \
     --umap data/100kb_mut_map.tsv \
     --shapes 0.2 \
     --scales 0.03 \
