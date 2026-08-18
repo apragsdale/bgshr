@@ -23,6 +23,7 @@ import numpy as np
 import pandas
 import time
 import scipy
+import gzip
 
 from bgshr import Util, ClassicBGS, Predict, Inference
 
@@ -637,7 +638,12 @@ def fit_Ne(args):
         mask = umap.mask
 
     # Load and mask diversity data
-    nd, ns = np.load(args.ndns).T
+    if args.ndns.endswith(".gz"):
+        # gzipped file - use gzip
+        with gzip.open(args.ndns, "rb") as fin:
+            nd, ns = np.load(fin).T
+    else:
+        nd, ns = np.load(args.ndns).T
     ndns = (np.ma.array(nd, mask=mask), np.ma.array(ns, mask=mask))
 
     if args.verbose:
