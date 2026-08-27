@@ -1001,6 +1001,9 @@ def get_umap(fname, rate_col="rate", u=None, L=None):
     if fname is not None:
         if fname.endswith(".npy"):
             umap = np.load(fname)
+        elif fname.endswith(".npy.gz"):
+            with gzip.open(fname, "rb") as fin:
+                umap = np.load(fin)
         else:
             u_tbl = pandas.read_table(fname, engine="python", sep=None)
             starts = np.array(u_tbl[u_tbl.columns[1]])
