@@ -518,20 +518,19 @@ def predict_B(args):
     out_windows = np.stack([np.arange(0, L, res),
         np.arange(res, L + res, res)], axis=1, dtype=np.int64)
 
-    # Compute expected diversity
+    # Interpolate B-values (if ``resolution`` is not used, interpolated B-
+    # values match focal ones produced by prediction)
     B_xs = interf_Bs[-1]
     Bmap = Predict.get_Bmap(xs, B_xs)
+    midpoints = np.mean(out_windows, axis=1)
+    foc_B = Bmap(midpoints)
+
+    # Compute expected diversity
     site_B = Bmap(np.arange(L))
     site_pi0 = Inference.expected_pi0(umap, df, elements=elements, dfes=dfes)
     site_pi = Inference.expected_pi(site_pi0, site_B, mask=mask)
-
-    if res == args.spacing:
-        foc_B = B_xs
-    else:
-        midpoints = np.mean(out_windows, axis=1)
-        foc_B = Bmap(midpoints)
-
     exp_pi, num_sites = Util.compute_window_averages(out_windows, site_pi)
+
     if args.verbose:
         print(Util._get_time(), "computed expected pi")
 
@@ -697,14 +696,14 @@ def fit_Ne(args):
     if args.verbose:
         print(Util._get_time(), f"emitting maps computed with Ne={Ne_used}")
 
-    # Interpolate B-values, if `resolution` is different than `spacing`
+    # Interpolate B-values. If ``resolution`` and ``spacing`` are equal,
+    # interpolation is still performed- to make sure that ``foc_B`` has the
+    # propert length, in cases where the final window extends beyond the
+    # chromosome end.
     B_xs = interf_Bs[-1]
-    if res == args.spacing:
-        foc_B = B_xs
-    else:
-        Bmap = Predict.get_Bmap(xs, B_xs)
-        midpoints = np.mean(out_windows, axis=1)
-        foc_B = Bmap(midpoints)
+    Bmap = Predict.get_Bmap(xs, B_xs)
+    midpoints = np.mean(out_windows, axis=1)
+    foc_B = Bmap(midpoints)
 
     exp_pi, num_sites = Util.compute_window_averages(out_windows, site_exp_pi)
     if args.verbose:
@@ -757,7 +756,7 @@ def fit_Ne(args):
     output.to_csv(args.out, index=False)
 
     if args.verbose:
-        print(Util._get_time(), "saved output")
+        print(Util._get_time(), f"saved output to {args.out}")
 
     # Write log file
     p_opt, f_opt, n_iters, n_calls, flag = opt
@@ -781,7 +780,7 @@ def fit_Ne(args):
             fout.write(line)
 
     if args.verbose:
-        print(Util._get_time(), "wrote log file")
+        print(Util._get_time(), f"wrote log file at {args.log_out}")
     return
 
 
