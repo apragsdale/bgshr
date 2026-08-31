@@ -493,7 +493,13 @@ def predict_B(args):
         print(Util._get_time(), "loaded data")
 
     # Set up focal site array
-    xs = np.arange(args.spacing // 2, L, args.spacing)
+    spacing = args.spacing
+    xs = np.arange(spacing // 2, L + spacing // 2, spacing)
+
+    if args.verbose:
+        print(
+            Util._get_time(),
+            f"predicting B at {len(xs)} loci {xs[0]}-{xs[-1]}")
 
     # Predict B-values at focal sites
     interf_Bs = Predict.interference_Bvals(
@@ -518,20 +524,23 @@ def predict_B(args):
     out_windows = np.stack([np.arange(0, L, res),
         np.arange(res, L + res, res)], axis=1, dtype=np.int64)
 
-    # Compute expected diversity
+    # Construct B interpolator
     B_xs = interf_Bs[-1]
     Bmap = Predict.get_Bmap(xs, B_xs)
-    site_B = Bmap(np.arange(L))
-    site_pi0 = Inference.expected_pi0(umap, df, elements=elements, dfes=dfes)
-    site_pi = Inference.expected_pi(site_pi0, site_B, mask=mask)
 
+    # Interpolate window B-values if required
     if res == args.spacing:
         foc_B = B_xs
     else:
         midpoints = np.mean(out_windows, axis=1)
         foc_B = Bmap(midpoints)
 
+    # Compute expected diversity
+    site_B = Bmap(np.arange(L))
+    site_pi0 = Inference.expected_pi0(umap, df, elements=elements, dfes=dfes)
+    site_pi = Inference.expected_pi(site_pi0, site_B, mask=mask)
     exp_pi, num_sites = Util.compute_window_averages(out_windows, site_pi)
+
     if args.verbose:
         print(Util._get_time(), "computed expected pi")
 
@@ -582,7 +591,7 @@ def predict_B(args):
     output.to_csv(args.out, index=False)
 
     if args.verbose:
-        print(Util._get_time(), "saved output")
+        print(Util._get_time(), f"saved output to {args.out}")
     return
 
 
@@ -650,7 +659,13 @@ def fit_Ne(args):
         print(Util._get_time(), "loaded data")
 
     # Set up focal site array
-    xs = np.arange(args.spacing // 2, L, args.spacing)
+    spacing = args.spacing
+    xs = np.arange(spacing // 2, L + spacing // 2, spacing)
+
+    if args.verbose:
+        print(
+            Util._get_time(),
+            f"predicting B at {len(xs)} loci {xs[0]}-{xs[-1]}")
 
     opt_args = (
         xs,
@@ -697,12 +712,14 @@ def fit_Ne(args):
     if args.verbose:
         print(Util._get_time(), f"emitting maps computed with Ne={Ne_used}")
 
-    # Interpolate B-values, if `resolution` is different than `spacing`
+    # Construct B-value interpolator
     B_xs = interf_Bs[-1]
-    if res == args.spacing:
+    Bmap = Predict.get_Bmap(xs, B_xs)
+
+    # Interpolate window B-values if needed
+    if res == spacing:
         foc_B = B_xs
     else:
-        Bmap = Predict.get_Bmap(xs, B_xs)
         midpoints = np.mean(out_windows, axis=1)
         foc_B = Bmap(midpoints)
 
@@ -757,7 +774,7 @@ def fit_Ne(args):
     output.to_csv(args.out, index=False)
 
     if args.verbose:
-        print(Util._get_time(), "saved output")
+        print(Util._get_time(), f"saved output to {args.out}")
 
     # Write log file
     p_opt, f_opt, n_iters, n_calls, flag = opt
@@ -781,7 +798,7 @@ def fit_Ne(args):
             fout.write(line)
 
     if args.verbose:
-        print(Util._get_time(), "wrote log file")
+        print(Util._get_time(), f"wrote log file at {args.log_out}")
     return
 
 
@@ -1001,6 +1018,9 @@ def get_umap(fname, rate_col="rate", u=None, L=None):
     if fname is not None:
         if fname.endswith(".npy"):
             umap = np.load(fname)
+        elif fname.endswith(".npy.gz"):
+            with gzip.open(fname, "rb") as fin:
+                umap = np.load(fin)
         else:
             u_tbl = pandas.read_table(fname, engine="python", sep=None)
             starts = np.array(u_tbl[u_tbl.columns[1]])
