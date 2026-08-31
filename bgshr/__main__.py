@@ -493,7 +493,13 @@ def predict_B(args):
         print(Util._get_time(), "loaded data")
 
     # Set up focal site array
-    xs = np.arange(args.spacing // 2, L, args.spacing)
+    spacing = args.spacing
+    xs = np.arange(spacing // 2, L + spacing // 2, spacing)
+
+    if args.verbose:
+        print(
+            Util._get_time(),
+            f"predicting B at {len(xs)} loci {xs[0]}-{xs[-1]}")
 
     # Predict B-values at focal sites
     interf_Bs = Predict.interference_Bvals(
@@ -518,12 +524,16 @@ def predict_B(args):
     out_windows = np.stack([np.arange(0, L, res),
         np.arange(res, L + res, res)], axis=1, dtype=np.int64)
 
-    # Interpolate B-values (if ``resolution`` is not used, interpolated B-
-    # values match focal ones produced by prediction)
+    # Construct B interpolator
     B_xs = interf_Bs[-1]
     Bmap = Predict.get_Bmap(xs, B_xs)
-    midpoints = np.mean(out_windows, axis=1)
-    foc_B = Bmap(midpoints)
+
+    # Interpolate window B-values if required
+    if res == args.spacing:
+        foc_B = B_xs
+    else:
+        midpoints = np.mean(out_windows, axis=1)
+        foc_B = Bmap(midpoints)
 
     # Compute expected diversity
     site_B = Bmap(np.arange(L))
@@ -581,7 +591,7 @@ def predict_B(args):
     output.to_csv(args.out, index=False)
 
     if args.verbose:
-        print(Util._get_time(), "saved output")
+        print(Util._get_time(), f"saved output to {args.out}")
     return
 
 
@@ -649,7 +659,13 @@ def fit_Ne(args):
         print(Util._get_time(), "loaded data")
 
     # Set up focal site array
-    xs = np.arange(args.spacing // 2, L, args.spacing)
+    spacing = args.spacing
+    xs = np.arange(spacing // 2, L + spacing // 2, spacing)
+
+    if args.verbose:
+        print(
+            Util._get_time(),
+            f"predicting B at {len(xs)} loci {xs[0]}-{xs[-1]}")
 
     opt_args = (
         xs,
@@ -696,14 +712,16 @@ def fit_Ne(args):
     if args.verbose:
         print(Util._get_time(), f"emitting maps computed with Ne={Ne_used}")
 
-    # Interpolate B-values. If ``resolution`` and ``spacing`` are equal,
-    # interpolation is still performed- to make sure that ``foc_B`` has the
-    # propert length, in cases where the final window extends beyond the
-    # chromosome end.
+    # Construct B-value interpolator
     B_xs = interf_Bs[-1]
     Bmap = Predict.get_Bmap(xs, B_xs)
-    midpoints = np.mean(out_windows, axis=1)
-    foc_B = Bmap(midpoints)
+
+    # Interpolate window B-values if needed
+    if res == spacing:
+        foc_B = B_xs
+    else:
+        midpoints = np.mean(out_windows, axis=1)
+        foc_B = Bmap(midpoints)
 
     exp_pi, num_sites = Util.compute_window_averages(out_windows, site_exp_pi)
     if args.verbose:
